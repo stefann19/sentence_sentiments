@@ -1,25 +1,19 @@
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
-import java.util.Iterator;
 
-public class WordReducer extends MapReduceBase implements Reducer<Text,IntWritable,Text,IntWritable> {
-    public void reduce(Text key, Iterator<IntWritable> iterator, OutputCollector<Text, IntWritable> outputCollector,
-                       Reporter reporter) throws
-                                          IOException
+public class WordReducer extends Reducer<Text,IntWritable,Text,IntWritable> {
+    public void reduce(Text key,Iterable<IntWritable> values,Context context) throws
+                                                                              IOException,
+                                                                              InterruptedException
     {
-       /* AtomicInteger count = new AtomicInteger();
-        iterator.forEachRemaining(va-> count.addAndGet(va.get()));*/
-        int count =0;
-        while (iterator.hasNext()){
-            IntWritable i = iterator.next();
-            count+=i.get();
-        }
-        outputCollector.collect(key,new IntWritable(count));
+        int sum = 0;
+        for (IntWritable val : values) {
+            sum += val.get();
+        }if(sum>24||sum<-24)
+        context.write(key,new IntWritable(sum));
     }
+
 }

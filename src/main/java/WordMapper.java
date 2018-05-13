@@ -1,21 +1,23 @@
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 
-public class WordMapper extends MapReduceBase implements Mapper<LongWritable, Text, Text, IntWritable> {
-    public void map(LongWritable longWritable, Text text, OutputCollector<Text, IntWritable> outputCollector,
-                    Reporter reporter) throws
-                                       IOException
+public class WordMapper extends Mapper<LongWritable,Text,Text,IntWritable> {
+    public void map(LongWritable key,Text value,Context context) throws
+                                                                 IOException,
+                                                                 InterruptedException
     {
-        String s = text.toString();
-        for (String word : s.split(" ")) {
-            outputCollector.collect(new Text(word),new IntWritable(1));
+        String s = value.toString();
+        for (String line : s.split("\n")) {
+            String[] split = line.split("\t");
+            int val = Integer.parseInt(split[1]);
+            if(val==0)val =-1;
+            for(String word:split[0].split("\\s+")){
+                context.write(new Text(word),new IntWritable(val));
+            }
         }
     }
 }
