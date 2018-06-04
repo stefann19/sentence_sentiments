@@ -1,6 +1,7 @@
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -12,21 +13,24 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class WordReducer extends Reducer<Text,JustTheTuple,Text,JustTheTuple> {
+    private List<String> positiveWords= new ArrayList<>();
+    private List<String> negativeWords= new ArrayList<>();
     public void reduce(Text key,Iterable<JustTheTuple> values,Context context) throws
                                                                               IOException,
                                                                               InterruptedException
     {
+
+
         JustTheTuple sum = new JustTheTuple();
         for (JustTheTuple val : values) {
             sum.setNegativeAppearances(val.getNegativeAppearances()+sum.getNegativeAppearances());
             sum.setPositiveAppearances(val.getPositiveAppearances()+sum.getPositiveAppearances());
         }
+
+
 
         URI[] stopWordsFiles = context.getCacheFiles();
 
@@ -34,44 +38,41 @@ public class WordReducer extends Reducer<Text,JustTheTuple,Text,JustTheTuple> {
             HashSet<String> neutralWords = FileHelper.readFile(new Path(stopWordsFiles[0]),context.getConfiguration());
 
             assert neutralWords != null;
-/*
-                System.out.println(neutralWords);
-*/
+
             boolean match = neutralWords.contains(key.toString());
             if(match){
+                if(sum.getNegativeAppearances()>sum.getPositiveAppearances()){
+                    negativeWords.add(key.toString());
+                }else{
+                    positiveWords.add(key.toString());
+                }
                 context.write(key,sum);
             }
         }
     }
 
-    /*private List<String> readFile(Path filePath, Configuration conf) {
+    @Override
+    protected void cleanup(Context context) throws IOException, InterruptedException {
+         PrintToFiles("positiveWords.txt",context.getConfiguration(),positiveWords);
+         PrintToFiles("negativeWords.txt",context.getConfiguration(),negativeWords);
 
-        try{
-            List<String> neutralWords = new ArrayList<>();
-            *//*BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toString()));
+    }
 
-            String neutralWord = null;
 
-            while((neutralWord = bufferedReader.readLine()) != null) {
+    void PrintToFiles(String path,Configuration conf,List<String> collection) throws
+                                          IOException
+    {
 
-                neutralWords.add(neutralWord.toLowerCase());
 
-            }*//*
 
-            FileSystem fs = FileSystem.get(conf);
-            FSDataInputStream inputStream = fs.open(filePath);
-            //Classical input stream usage
-            String in= IOUtils.toString(inputStream, "UTF-8");
-            inputStream.close();
+        FileSystem fs = FileSystem.get(conf);
+        FSDataOutputStream sentencesFileStream = fs.create(new Path(path));
+        sentencesFileStream.write(String.join("\n",collection).getBytes());
+        sentencesFileStream.flush();
+        sentencesFileStream.hsync();
+        sentencesFileStream.close();
+    }
 
-            return Arrays.asList(in.split("\n"));
 
-        } catch(IOException ex) {
-            ex.printStackTrace();
-            System.err.println("Exception while reading stop words file: " + ex.getMessage());
-            return null;
-        }
-
-    }*/
 
 }

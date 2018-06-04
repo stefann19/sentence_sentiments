@@ -22,7 +22,8 @@ public class SentenceSentiments extends Configured implements Tool {
             return -1;
         }
         Configuration conf = new Configuration();
-        conf.set("extra1", strings[3]);
+        if(strings.length>=4)
+            conf.set("extra1", strings[3]);
         Job job = Job.getInstance(conf,"sentence sentiments");
         job.setJarByClass(SentenceSentiments.class);
         job.setMapperClass(WordMapper.class);
@@ -32,6 +33,7 @@ public class SentenceSentiments extends Configured implements Tool {
              strings) {
             System.out.println(s + ", ");
         }
+        job.setCacheFiles(new URI[]{new Path("neutralWords.txt").toUri()});
 
         switch(strings[0]){
             case "Words":
@@ -51,6 +53,9 @@ public class SentenceSentiments extends Configured implements Tool {
                 preprocessHelper.preprocess();
                 System.out.println("Neutral words found");
                 return 0;
+            case "ExtractWords":
+                job.setReducerClass(WordReducer.class);
+                break;
         }
 
         job.setMapOutputValueClass(JustTheTuple.class);
@@ -60,7 +65,6 @@ public class SentenceSentiments extends Configured implements Tool {
         FileSystem fs = FileSystem.get(conf);
 
         FileOutputFormat.setOutputPath(job,new Path(strings[2]));
-        job.setCacheFiles(new URI[]{new Path("neutralWords.txt").toUri()});
 
         return job.waitForCompletion(true)?0:1;
     }
