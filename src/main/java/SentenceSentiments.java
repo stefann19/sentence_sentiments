@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 
 public class SentenceSentiments extends Configured implements Tool {
     public int run(String[] strings) throws Exception {
-        if(strings.length<2) {
+        if(strings.length<1) {
             System.out.println("Wrong input or output path..");
             return -1;
         }
@@ -38,7 +38,10 @@ public class SentenceSentiments extends Configured implements Tool {
             case "SentenceAnalysis":
                 break;
             case "FindNeutralWords":
-                break;
+                PreprocessHelper preprocessHelper = new PreprocessHelper(strings[1],conf );
+                preprocessHelper.preprocess();
+                System.out.println("Neutral words found");
+                return 0;
         }
 
         job.setMapOutputValueClass(JustTheTuple.class);
@@ -47,16 +50,9 @@ public class SentenceSentiments extends Configured implements Tool {
 
         FileSystem fs = FileSystem.get(conf);
 
-/*
-*/      PreprocessHelper preprocessHelper = new PreprocessHelper(strings[1],conf );
-        preprocessHelper.preprocess();
-/*
-        }
-*/
-
-        FileInputFormat.addInputPath(job,new Path("sentences1.txt"));
+        FileInputFormat.addInputPath(job,new Path("sentences.txt"));
         FileOutputFormat.setOutputPath(job,new Path(strings[2]));
-        job.setCacheFiles(new URI[]{new Path("neutralWords1.txt").toUri()});
+        job.setCacheFiles(new URI[]{new Path("neutralWords.txt").toUri()});
 
         return job.waitForCompletion(true)?0:1;
     }

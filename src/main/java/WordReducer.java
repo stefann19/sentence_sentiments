@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class WordReducer extends Reducer<Text,JustTheTuple,Text,JustTheTuple> {
@@ -26,44 +27,28 @@ public class WordReducer extends Reducer<Text,JustTheTuple,Text,JustTheTuple> {
             sum.setNegativeAppearances(val.getNegativeAppearances()+sum.getNegativeAppearances());
             sum.setPositiveAppearances(val.getPositiveAppearances()+sum.getPositiveAppearances());
         }
-/*
-        int total =sum.getPositiveAppearances()+ sum.getNegativeAppearances();
-*/
-       /* boolean negative =sum.getPositiveAppearances()> total*0.90f;
-        boolean positive =sum.getNegativeAppearances()> total*0.90f;*/
-        /*boolean minimum = sum.getNegativeAppearances() + sum.getPositiveAppearances()>=2;
-        if(!minimum)return;*/
-/*
-        if(positive||negative){
-*/
-        URI[] stopWordsFiles = DistributedCache.getCacheFiles(context.getConfiguration());
+
+        URI[] stopWordsFiles = context.getCacheFiles();
 
         if(stopWordsFiles != null && stopWordsFiles.length > 0) {
-            List<String> neutralWords = readFile(new Path(stopWordsFiles[0]),context.getConfiguration());
+            HashSet<String> neutralWords = FileHelper.readFile(new Path(stopWordsFiles[0]),context.getConfiguration());
 
             assert neutralWords != null;
 /*
                 System.out.println(neutralWords);
 */
-            boolean match =neutralWords.stream().noneMatch(word-> {
-                    String s = key.toString().toLowerCase();
-                    if(word.toLowerCase().equals(s)){
-                        return true;
-                    }
-                    return false;
-
-                });
-                if(match){
-                    context.write(key,sum);
-                }
+            boolean match = neutralWords.contains(key.toString());
+            if(match){
+                context.write(key,sum);
+            }
         }
     }
 
-    private List<String> readFile(Path filePath, Configuration conf) {
+    /*private List<String> readFile(Path filePath, Configuration conf) {
 
         try{
             List<String> neutralWords = new ArrayList<>();
-            /*BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toString()));
+            *//*BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toString()));
 
             String neutralWord = null;
 
@@ -71,7 +56,7 @@ public class WordReducer extends Reducer<Text,JustTheTuple,Text,JustTheTuple> {
 
                 neutralWords.add(neutralWord.toLowerCase());
 
-            }*/
+            }*//*
 
             FileSystem fs = FileSystem.get(conf);
             FSDataInputStream inputStream = fs.open(filePath);
@@ -87,6 +72,6 @@ public class WordReducer extends Reducer<Text,JustTheTuple,Text,JustTheTuple> {
             return null;
         }
 
-    }
+    }*/
 
 }

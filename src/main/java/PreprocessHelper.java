@@ -51,7 +51,6 @@ public class PreprocessHelper {
             inputStream.close();
 
             String[] arr =in.split("\n");
-            System.out.println(arr.length + "HEEELP");
             Stream<String> stream = Arrays.stream(arr);
 
             stream.forEach(this::processLine);
@@ -62,14 +61,14 @@ public class PreprocessHelper {
           /*  Files.write(Paths.get(sentencesFile),sentences, new StandardOpenOption[]{StandardOpenOption.CREATE_NEW});
             Files.write(Paths.get(neutralWordsFile),neutralWords, new StandardOpenOption[]{StandardOpenOption.CREATE_NEW});
 */
-            FSDataOutputStream sentencesFileStream = fs.create(new Path("sentences1.txt"));
+            FSDataOutputStream sentencesFileStream = fs.create(new Path("sentences.txt"));
             sentencesFileStream.write(String.join("\n",sentences).getBytes());
             sentencesFileStream.flush();
             sentencesFileStream.hsync();
             sentencesFileStream.close();
 
 
-            FSDataOutputStream neutralWordsFileStream = fs.create(new Path("neutralWords1.txt"));
+            FSDataOutputStream neutralWordsFileStream = fs.create(new Path("neutralWords.txt"));
             neutralWordsFileStream.write(String.join("\n",neutralWords).getBytes());
             neutralWordsFileStream.flush();
             neutralWordsFileStream.hsync();
@@ -97,7 +96,7 @@ public class PreprocessHelper {
         }
         String[] secondSplit =parts[2].split(" ");
         if (secondSplit.length==1 && "123".contains(parts[3])){
-            neutralWords.add(parts[2]);
+            neutralWords.add(parts[2].toLowerCase());
         }
 
     }
