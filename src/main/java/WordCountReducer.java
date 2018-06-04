@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-public class WordCountReducer extends Reducer<Text,IntWritable,Text,JustTheTuple> {
-    private IntWritable result = new IntWritable();
+public class WordCountReducer extends Reducer<Text,IntWritable,Text,IntWritable> {
     private Map<Text,IntWritable> countMap = new HashMap<Text,IntWritable>();
 
     public void reduce(Text key, Iterable<IntWritable> values,
@@ -19,8 +18,7 @@ public class WordCountReducer extends Reducer<Text,IntWritable,Text,JustTheTuple
         for (IntWritable val : values) {
             sum += val.get();
         }
-        result.set(sum);
-        countMap.put(key, result);
+        countMap.put(new Text(key), new IntWritable(sum));
     }
 
     @Override
@@ -39,6 +37,7 @@ public class WordCountReducer extends Reducer<Text,IntWritable,Text,JustTheTuple
             if (counter++ == 1000) {
                 break;
             }
+            context.write(key, sortedMap.get(key));
             relevantWords.put(key, sortedMap.get(key));
         }
 
@@ -47,7 +46,7 @@ public class WordCountReducer extends Reducer<Text,IntWritable,Text,JustTheTuple
             sum.setPositiveAppearances(sum.getPositiveAppearances()+getValue(key, positiveWords));
             sum.setNegativeAppearances(sum.getNegativeAppearances()+getValue(key, negativeWords));
         }
-        context.write(new Text("Result: "), sum);
+        context.write(new Text("Result: "), new IntWritable(sum.getPositiveAppearances()-sum.getNegativeAppearances()));
     }
 
     private int getValue(Text word, HashSet<String> words) throws IOException {

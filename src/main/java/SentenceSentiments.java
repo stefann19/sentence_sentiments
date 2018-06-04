@@ -13,6 +13,7 @@ import org.apache.hadoop.util.ToolRunner;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.StringTokenizer;
 
 public class SentenceSentiments extends Configured implements Tool {
@@ -27,6 +28,8 @@ public class SentenceSentiments extends Configured implements Tool {
         Job job = Job.getInstance(conf,"sentence sentiments");
         job.setJarByClass(SentenceSentiments.class);
         job.setMapperClass(WordMapper.class);
+        job.setMapOutputValueClass(JustTheTuple.class);
+        job.setOutputValueClass(IntWritable.class);
         //job.setCombinerClass(WordReducer.class);
 
         for (String s:
@@ -41,12 +44,15 @@ public class SentenceSentiments extends Configured implements Tool {
                 FileInputFormat.addInputPath(job,new Path("sentences.txt"));
                 break;
             case "BookAnalysis":
+                job.setCacheFiles(new URI[]{new Path("neutralWords.txt").toUri(), new Path("positiveWords.txt").toUri(), new Path("negativeWords.txt").toUri()});
                 job.setReducerClass(WordCountReducer.class);
                 job.setMapperClass(WordCountMapper.class);
-                FileInputFormat.addInputPath(job,new Path("book.txt"));
+                FileInputFormat.addInputPath(job,new Path(strings[1]));
+                job.setMapOutputValueClass(IntWritable.class);
                 break;
             case "SentenceAnalysis":
-                analyzeSentence(strings[3]);
+                job.setCacheFiles(new URI[]{new Path("neutralWords.txt").toUri(), new Path("positiveWords.txt").toUri(), new Path("negativeWords.txt").toUri()});
+                analyzeSentence(strings[3], conf);
                 return 0;
             case "FindNeutralWords":
                 PreprocessHelper preprocessHelper = new PreprocessHelper(strings[1],conf );
@@ -55,12 +61,13 @@ public class SentenceSentiments extends Configured implements Tool {
                 return 0;
             case "ExtractWords":
                 job.setReducerClass(WordReducer.class);
+                FileInputFormat.addInputPath(job,new Path("sentences.txt"));
                 break;
         }
 
-        job.setMapOutputValueClass(JustTheTuple.class);
+
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+
 
         FileSystem fs = FileSystem.get(conf);
 
@@ -79,16 +86,35 @@ public class SentenceSentiments extends Configured implements Tool {
         System.exit(exitCode);
     }
 
-    private void analyzeSentence(String sentence) {
+    private void analyzeSentence(String sentence, Configuration conf) {
+        URI[] stopWordsFiles = new URI[]{new Path("neutralWords.txt").toUri(), new Path("positiveWords.txt").toUri(), new Path("negativeWords.txt").toUri()};
+
+        HashSet<String> positiveWords = FileHelper.readFile(new Path(stopWordsFiles[1]), conf);
+        HashSet<String> negativeWords = FileHelper.readFile(new Path(stopWordsFiles[2]), conf);
+
         StringTokenizer itr = new StringTokenizer(sentence);
         String word;
         int sum=0;
         while (itr.hasMoreTokens()) {
             word = itr.nextToken();
-            sum+= getValue(word);
+            sum += getValue(word, positiveWords, negativeWords);
+        }
+        if(sum>0){
+            System.out.println("positive");
+        } else if(sum < 0) {
+            System.out.println("negative");
+        } else {
+            System.out.println("neutral");
         }
     }
 
-    private void getValue(String word){}
+    private int getValue(String word, HashSet<String> good, HashSet<String> bad){
+        if(good.contains(word)){
+            return 1;
+        } else if (bad.contains(word)) {
+            return -1;
+        }
+        return 0;
+    }
 
 }
