@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
-public class PositiveWordReducer extends Reducer<Text,JustTheTuple,Text,IntWritable> {
+public class TopWordsReducer extends Reducer<Text,JustTheTuple,Text,IntWritable> {
     private Map<Text,IntWritable> countMap = new HashMap<Text,IntWritable>();
 
     public void reduce(Text key,Iterable<JustTheTuple> values,Context context) throws
@@ -19,11 +19,17 @@ public class PositiveWordReducer extends Reducer<Text,JustTheTuple,Text,IntWrita
             InterruptedException
     {
         JustTheTuple sum = new JustTheTuple();
+        Configuration conf = context.getConfiguration();
+        String type=conf.get("extra1");
         for (JustTheTuple val : values) {
             sum.setNegativeAppearances(val.getNegativeAppearances()+sum.getNegativeAppearances());
             sum.setPositiveAppearances(val.getPositiveAppearances()+sum.getPositiveAppearances());
         }
-        if(sum.getPositiveAppearances()>sum.getNegativeAppearances()) {
+        if((sum.getPositiveAppearances()>sum.getNegativeAppearances() && type.equals("positive"))) {
+            IntWritable appearences = new IntWritable(sum.getNegativeAppearances() + sum.getPositiveAppearances());
+            countMap.put(new Text(key), appearences);
+        }
+        if((sum.getPositiveAppearances()<sum.getNegativeAppearances() && type.equals("negative"))) {
             IntWritable appearences = new IntWritable(sum.getNegativeAppearances() + sum.getPositiveAppearances());
             countMap.put(new Text(key), appearences);
         }

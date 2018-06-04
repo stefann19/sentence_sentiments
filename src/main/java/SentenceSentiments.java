@@ -21,17 +21,21 @@ public class SentenceSentiments extends Configured implements Tool {
             return -1;
         }
         Configuration conf = new Configuration();
+        conf.set("extra1", strings[3]);
         Job job = Job.getInstance(conf,"sentence sentiments");
+        //Job job = new Job(conf,"sentence sentiments");
         job.setJarByClass(SentenceSentiments.class);
         job.setMapperClass(WordMapper.class);
         //job.setCombinerClass(WordReducer.class);
 
+        for (String s:
+             strings) {
+            System.out.println(s + ", ");
+        }
+
         switch(strings[0]){
-            case "PositiveWords":
-                job.setReducerClass(PositiveWordReducer.class);
-                break;
-            case "NegativeWords":
-                job.setReducerClass(NegativeWordsReducer.class);
+            case "Words":
+                job.setReducerClass(TopWordsReducer.class);
                 break;
             case "BookAnalysis":
                 break;

@@ -45,7 +45,7 @@ public class PositiveWords extends Configured implements Tool {
 
     job.setMapperClass(WordMapper.class);
     //job.setCombinerClass(WordReducer.class);
-    job.setReducerClass(PositiveWordReducer.class);
+    job.setReducerClass(TopWordsReducer.class);
 
     job.setMapOutputValueClass(JustTheTuple.class);
     job.setOutputKeyClass(Text.class);
