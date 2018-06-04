@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="sentence_sentiments" />
+        <module name="sentence_sentiments2" />
       </profile>
     </annotationProcessing>
   </component>

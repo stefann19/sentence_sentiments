@@ -58,22 +58,15 @@ public class TopWordsReducer extends Reducer<Text,JustTheTuple,Text,IntWritable>
         URI[] stopWordsFiles = context.getCacheFiles();
 
         if(stopWordsFiles != null && stopWordsFiles.length > 0) {
-            List<String> neutralWords = readFile(new Path(stopWordsFiles[0]),context.getConfiguration());
+            HashSet<String> neutralWords = FileHelper.readFile(new Path(stopWordsFiles[0]),context.getConfiguration());
 
             assert neutralWords != null;
 
             List<Text> wordsToDelete= new ArrayList<Text>();
 
             for (Text key: countMap.keySet()) {
-                boolean match = neutralWords.stream().noneMatch(word -> {
-                    String s = key.toString().toLowerCase();
-                    if (word.toLowerCase().equals(s)) {
-                        return true;
-                    }
-                    return false;
-                });
-
-                if (!match) {
+                boolean match = neutralWords.contains(key.toString());
+                if (match) {
                     wordsToDelete.add(key);
                 }
             }
@@ -85,17 +78,17 @@ public class TopWordsReducer extends Reducer<Text,JustTheTuple,Text,IntWritable>
     }
 
 
-    private List<String> readFile(Path filePath, Configuration conf) {
+    /*private HashSet<String> readFile(Path filePath, Configuration conf) {
 
         try{
-            List<String> neutralWords = new ArrayList<>();
+            HashSet<String> neutralWords = new HashSet<>();
             FileSystem fs = FileSystem.get(conf);
             FSDataInputStream inputStream = fs.open(filePath);
             //Classical input stream usage
             String in= IOUtils.toString(inputStream, "UTF-8");
             inputStream.close();
 
-            return Arrays.asList(in.split("\n"));
+            return new HashSet<String>(Arrays.asList(in.split("\n")));
 
         } catch(IOException ex) {
             ex.printStackTrace();
@@ -103,6 +96,6 @@ public class TopWordsReducer extends Reducer<Text,JustTheTuple,Text,IntWritable>
             return null;
         }
 
-    }
+    }*/
 
 }
