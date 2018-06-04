@@ -13,6 +13,7 @@ import org.apache.hadoop.util.ToolRunner;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.StringTokenizer;
 
 public class SentenceSentiments extends Configured implements Tool {
     public int run(String[] strings) throws Exception {
@@ -23,7 +24,6 @@ public class SentenceSentiments extends Configured implements Tool {
         Configuration conf = new Configuration();
         conf.set("extra1", strings[3]);
         Job job = Job.getInstance(conf,"sentence sentiments");
-        //Job job = new Job(conf,"sentence sentiments");
         job.setJarByClass(SentenceSentiments.class);
         job.setMapperClass(WordMapper.class);
         //job.setCombinerClass(WordReducer.class);
@@ -36,11 +36,16 @@ public class SentenceSentiments extends Configured implements Tool {
         switch(strings[0]){
             case "Words":
                 job.setReducerClass(TopWordsReducer.class);
+                FileInputFormat.addInputPath(job,new Path("sentences.txt"));
                 break;
             case "BookAnalysis":
+                job.setReducerClass(WordCountReducer.class);
+                job.setMapperClass(WordCountMapper.class);
+                FileInputFormat.addInputPath(job,new Path("book.txt"));
                 break;
             case "SentenceAnalysis":
-                break;
+                analyzeSentence(strings[3]);
+                return 0;
             case "FindNeutralWords":
                 PreprocessHelper preprocessHelper = new PreprocessHelper(strings[1],conf );
                 preprocessHelper.preprocess();
@@ -54,7 +59,6 @@ public class SentenceSentiments extends Configured implements Tool {
 
         FileSystem fs = FileSystem.get(conf);
 
-        FileInputFormat.addInputPath(job,new Path("sentences.txt"));
         FileOutputFormat.setOutputPath(job,new Path(strings[2]));
         job.setCacheFiles(new URI[]{new Path("neutralWords.txt").toUri()});
 
@@ -70,4 +74,17 @@ public class SentenceSentiments extends Configured implements Tool {
         }
         System.exit(exitCode);
     }
+
+    private void analyzeSentence(String sentence) {
+        StringTokenizer itr = new StringTokenizer(sentence);
+        String word;
+        int sum=0;
+        while (itr.hasMoreTokens()) {
+            word = itr.nextToken();
+            sum+= getValue(word);
+        }
+    }
+
+    private void getValue(String word){}
+
 }
